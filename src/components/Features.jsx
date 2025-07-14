@@ -35,16 +35,25 @@ const features = [
     description: 'Customize your workflow with a library of microtools that integrate seamlessly with your existing systems.',
   },
 ];
-const words = `The All-in-One Recruitment Platform`;
-
+const textForFeatures = [
+  {
+    text: "The All-in-One Recruitment Platform",
+    className: "text-2xl font-bold", // Style for the first line
+  },
+  {
+    text: "From first contact to final offer, we provide the tools you need to hire efficiently and effectively.",
+    className: "text-base font-normal mt-4", // Smaller, non-bold, with top margin
+  },
+];
 const Features = () => {
   return (
     <section id="features" className="py-20 bg-slate-800">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           {/* <h2 className="text-3xl md:text-4xl font-bold text-white">The All-in-One Recruitment Platform</h2> */}
-          <TextGenerateEffect words={words}/>
-          <p className="text-slate-400 mt-4 max-w-2xl mx-auto">From first contact to final offer, we provide the tools you need to hire efficiently and effectively.</p>
+          <TextGenerateEffect textBlocks={textForFeatures} />
+          <TextGenerateEffect  words="From first contact to final offer, we provide the tools you need to hire efficiently and effectively."/>
+            
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (

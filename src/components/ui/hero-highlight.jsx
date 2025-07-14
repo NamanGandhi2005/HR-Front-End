@@ -1,12 +1,17 @@
 "use client";
 import { cn } from "../../lib/utils";
-import { useMotionValue, motion, useMotionTemplate } from "motion/react";
-import React from "react";
+import {
+  useMotionValue,
+  motion,
+  useMotionTemplate,
+  useAnimate, // Import useAnimate
+} from "motion/react";
+import React, { useEffect } from "react"; // Import React and useEffect
 
 export const HeroHighlight = ({
   children,
   className,
-  containerClassName
+  containerClassName,
 }) => {
   let mouseX = useMotionValue(0);
   let mouseY = useMotionValue(0);
@@ -26,7 +31,7 @@ export const HeroHighlight = ({
   function handleMouseMove({
     currentTarget,
     clientX,
-    clientY
+    clientY,
   }) {
     if (!currentTarget) return;
     let { left, top } = currentTarget.getBoundingClientRect();
@@ -40,17 +45,20 @@ export const HeroHighlight = ({
         "group relative flex h-[40rem] w-full items-center justify-center bg-white dark:bg-black",
         containerClassName
       )}
-      onMouseMove={handleMouseMove}>
+      onMouseMove={handleMouseMove}
+    >
       <div
         className="pointer-events-none absolute inset-0 dark:hidden"
         style={{
           backgroundImage: dotPatterns.light.default,
-        }} />
+        }}
+      />
       <div
         className="pointer-events-none absolute inset-0 hidden dark:block"
         style={{
           backgroundImage: dotPatterns.dark.default,
-        }} />
+        }}
+      />
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 dark:hidden"
         style={{
@@ -69,7 +77,8 @@ export const HeroHighlight = ({
               transparent 100%
             )
           `,
-        }} />
+        }}
+      />
       <motion.div
         className="pointer-events-none absolute inset-0 hidden opacity-0 transition duration-300 group-hover:opacity-100 dark:block"
         style={{
@@ -88,7 +97,8 @@ export const HeroHighlight = ({
               transparent 100%
             )
           `,
-        }} />
+        }}
+      />
       <div className={cn("relative z-20", className)}>{children}</div>
     </div>
   );
@@ -96,30 +106,57 @@ export const HeroHighlight = ({
 
 export const Highlight = ({
   children,
-  className
+  className,
 }) => {
+  const [scope, animate] = useAnimate();
+
+  useEffect(() => {
+    // Set up the Intersection Observer
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // If the element is in view, start the animation
+        if (entry.isIntersecting) {
+          animate(
+            scope.current,
+            { backgroundSize: "100% 100%" },
+            { duration: 2, ease: "linear", delay: 0.5 }
+          );
+        } else {
+          // If it's out of view, reset the animation instantly
+          animate(scope.current, { backgroundSize: "0% 100%" }, { duration: 0 });
+        }
+      },
+      {
+        threshold: 0.1, // Trigger when 10% of the element is visible
+      }
+    );
+
+    const currentScope = scope.current;
+    if (currentScope) {
+      observer.observe(currentScope);
+    }
+
+    return () => {
+      if (currentScope) {
+        observer.unobserve(currentScope);
+      }
+    };
+  }, [scope, animate]);
+
   return (
     <motion.span
-      initial={{
-        backgroundSize: "0% 100%",
-      }}
-      animate={{
-        backgroundSize: "100% 100%",
-      }}
-      transition={{
-        duration: 2,
-        ease: "linear",
-        delay: 0.5,
-      }}
+      ref={scope}
       style={{
         backgroundRepeat: "no-repeat",
         backgroundPosition: "left center",
         display: "inline",
+        backgroundSize: "0% 100%", // Set initial state here
       }}
       className={cn(
         `relative inline-block rounded-lg bg-gradient-to-r from-indigo-300 to-purple-300 px-1 pb-1 dark:from-indigo-500 dark:to-purple-500`,
         className
-      )}>
+      )}
+    >
       {children}
     </motion.span>
   );

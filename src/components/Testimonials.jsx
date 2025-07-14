@@ -1,4 +1,5 @@
 import React from 'react';
+import { TextGenerateEffect } from "./ui/text-generate-effect";
 
 const testimonials = [
   {
@@ -14,12 +15,20 @@ const testimonials = [
     avatar: "https://i.pravatar.cc/150?u=a042581f4e29026702d", // Placeholder avatar
   },
 ];
+const recruiterHeading = [
+  {
+    text: "Loved by Leading Recruiters",
+    className: "text-3xl md:text-4xl font-bold text-white",
+  },
+];
 
 const Testimonials = () => {
   return (
     <section className="py-20 bg-slate-900">
       <div className="container mx-auto px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-12">Loved by Leading Recruiters</h2>
+        <div className="text-center mb-12">
+            <TextGenerateEffect textBlocks={recruiterHeading} />
+          </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {testimonials.map((testimonial, index) => (
             <div key={index} className="bg-slate-800 p-8 rounded-lg shadow-lg">

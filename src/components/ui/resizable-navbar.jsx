@@ -1,6 +1,7 @@
-"use client";;
+"use client";
 import { cn } from "../../lib/utils";
 import { IconMenu2, IconX } from "@tabler/icons-react";
+import ColourfulText from "./colourful-text";
 import {
   motion,
   AnimatePresence,
@@ -197,7 +198,10 @@ export const NavbarLogo = () => {
     >
 
     <FaRocket className="text-blue-500 text-2xl" />
-    <span className="font-medium text-black dark:text-white">HireAi</span>
+    <h1 className="text-2xl md:text-5xl lg:text-4xl font-bold text-center text-white relative z-2 font-sans">
+        <ColourfulText text="HireAI" />
+
+    </h1>
 
     </a>
   );

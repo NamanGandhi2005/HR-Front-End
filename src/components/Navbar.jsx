@@ -12,6 +12,7 @@ import {
 } from "./ui/resizable-navbar";
 import { useState } from "react";
 import {Link} from 'react-router-dom';
+import ColourfulText from "./ui/colourful-text";
 
 export function NavbarDemo() {
   const navItems = [

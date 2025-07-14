@@ -7,7 +7,14 @@ import React from 'react';
 import { BackgroundLines } from "./ui/background-lines";
 import { motion } from "motion/react";
 import { HeroHighlight, Highlight } from "./ui/hero-highlight";
+import { TextGenerateEffect } from "./ui/text-generate-effect";
 
+const heroParagraph = [
+  {
+    text: "Automate tasks, engage top candidates 24/7, and build winning teams faster. Our intelligent platform streamlines everything from JDs to interviews.",
+    className: "text-lg md:text-xl text-slate-300 font-normal",
+  },
+];
 const Hero = () => {
   return (
     <section className="py-20 md:py-32 bg-slate-900">
@@ -19,9 +26,9 @@ const Hero = () => {
         <Highlight className="text-black dark:text-white text-2xl px-4 md:text-4xl lg:text-5xl font-bold text-neutral-700 dark:text-white max-w-4xl leading-relaxed lg:leading-snug text-center mx-auto">
           With AI
         </Highlight>
-        <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-8 mt-10">
-          Automate tasks, engage top candidates 24/7, and build winning teams faster. Our intelligent platform streamlines everything from JDs to interviews.
-        </p>
+        <div className="max-w-3xl mx-auto mb-8 mt-10">
+  <TextGenerateEffect textBlocks={heroParagraph} />
+</div>
         </BackgroundLines>
         <div className="flex justify-center space-x-4">
           <Button 

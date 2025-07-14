@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTwitter, FaLinkedin, FaGithub, FaRocket } from 'react-icons/fa';
+import ColourfulText from "./ui/colourful-text";
 
 const Footer = () => {
   return (
@@ -9,7 +10,10 @@ const Footer = () => {
           <div className="flex items-center space-x-2 mb-6 md:mb-0">
             <FaRocket className="text-blue-500 text-2xl" />
           
-            <span className="text-xl font-bold text-white">HireAI</span>
+            <h1 className="text-2xl md:text-5xl lg:text-4xl font-bold text-center text-white relative z-2 font-sans">
+                    <ColourfulText text="HireAI" />
+            
+            </h1>
           </div>
           <div className="flex space-x-6 text-slate-400 mb-6 md:mb-0">
             <a href="#" className="hover:text-white transition duration-300">About</a>

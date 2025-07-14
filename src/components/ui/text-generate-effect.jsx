@@ -1,88 +1,98 @@
 "use client";
-import { useEffect } from "react";
+import React, { useEffect } from "react"; // Import React
 import { motion, stagger, useAnimate } from "motion/react";
 import { cn } from "../../lib/utils";
 
 export const TextGenerateEffect = ({
-  words,
+  textBlocks = [], // Added default empty array to prevent map error
   className,
   filter = true,
-  duration = 0.5
+  duration = 0.5,
 }) => {
   const [scope, animate] = useAnimate();
-  let wordsArray = words.split(" ");
 
   useEffect(() => {
-    // Create a new Intersection Observer
     const observer = new IntersectionObserver(
       (entries) => {
-        // Loop through the entries
         entries.forEach((entry) => {
-          // If the element is intersecting (in view)
           if (entry.isIntersecting) {
-            // Start the animation to reveal the text
-            animate("span", {
-              opacity: 1,
-              filter: filter ? "blur(0px)" : "none",
-            }, {
-              duration: duration ? duration : 1,
-              delay: stagger(0.2),
-            });
+            animate(
+              "span",
+              {
+                opacity: 1,
+                filter: filter ? "blur(0px)" : "none",
+              },
+              {
+                duration: duration,
+                delay: stagger(0.1), // Adjusted stagger for a smoother effect across lines
+              }
+            );
           } else {
-            // If the element is not intersecting (out of view), reset it instantly
-            animate("span", { 
-              opacity: 0, 
-              filter: filter ? "blur(10px)" : "none" 
-            }, { duration: 0 });
+            animate(
+              "span",
+              {
+                opacity: 0,
+                filter: filter ? "blur(10px)" : "none",
+              },
+              { duration: 0 }
+            );
           }
         });
       },
-      // Options for the observer: trigger when 20% of the element is visible
       { threshold: 0.2 }
     );
 
     const currentScope = scope.current;
-    // If the scope (the container div) exists, start observing it
     if (currentScope) {
       observer.observe(currentScope);
     }
 
-    // Cleanup function to unobserve the element when the component unmounts
     return () => {
       if (currentScope) {
         observer.unobserve(currentScope);
       }
     };
-  }, [scope, animate, filter, duration]); // The effect depends on the scope being available
+  }, [scope, animate, filter, duration]);
 
-  const renderWords = () => {
+  const renderTextBlocks = () => {
     return (
       <motion.div ref={scope}>
-        {wordsArray.map((word, idx) => {
-          return (
-            <motion.span
-              key={word + idx}
-              // The initial state is now handled by the observer
-              className="dark:text-white text-black opacity-0"
-              style={{
-                filter: filter ? "blur(10px)" : "none",
-              }}>
-              {word}{" "}
-            </motion.span>
-          );
-        })}
+        {/* Map over the array of text blocks */}
+        {textBlocks.map((block, blockIdx) => (
+          // Each block gets its own container with specific styling
+          <div
+            key={blockIdx}
+            className={cn(
+              "dark:text-white text-black leading-snug tracking-wide",
+              block.className // Apply custom classes here
+            )}
+          >
+            {block.text.split(" ").map((word, wordIdx) => (
+              // Use a React.Fragment to correctly render spaces between words
+              <React.Fragment key={`${word}-${wordIdx}`}>
+                <motion.span
+                  className="opacity-0" // Base opacity
+                  style={{
+                    filter: filter ? "blur(10px)" : "none",
+                    display: "inline-block",
+                  }}
+                >
+                  {word}
+                </motion.span>
+                {/* Render the space outside the motion span */}
+                {" "}
+              </React.Fragment>
+            ))}
+          </div>
+        ))}
       </motion.div>
     );
   };
 
   return (
-    <div className={cn("font-bold", className)}>
-      <div className="mt-4">
-        <div
-          className=" dark:text-white text-black text-2xl leading-snug tracking-wide">
-          {renderWords()}
-        </div>
-      </div>
+    // Removed font-bold from the main container
+    <div className={cn("max-w-4xl mx-auto", className)}>
+      <div className="mt-4">{renderTextBlocks()}</div>
     </div>
   );
 };
