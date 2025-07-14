@@ -8,6 +8,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-2 mb-6 md:mb-0">
             <FaRocket className="text-blue-500 text-2xl" />
+          
             <span className="text-xl font-bold text-white">HireAI</span>
           </div>
           <div className="flex space-x-6 text-slate-400 mb-6 md:mb-0">

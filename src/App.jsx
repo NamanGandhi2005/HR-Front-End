@@ -9,7 +9,7 @@ import LoginPage from './pages/LoginPage';
 function App() {
   return (
     <Router>
-      <div className="bg-slate-900 text-white min-h-screen flex flex-col">
+      <div className="bg-slate-900 text-white min-h-screen flex flex-col relative">
         <Navbar />
         <main className="flex-grow">
           <Routes>
