@@ -8,6 +8,9 @@ import { BackgroundLines } from "./ui/background-lines";
 import { motion } from "motion/react";
 import { HeroHighlight, Highlight } from "./ui/hero-highlight";
 import { TextGenerateEffect } from "./ui/text-generate-effect";
+import { PlaceholdersAndVanishInput } from "./ui/placeholders-and-vanish-input";
+// import { HoverBorderGradient } from "./ui/hover-border-gradient";
+
 
 const heroParagraph = [
   {
@@ -16,16 +19,45 @@ const heroParagraph = [
   },
 ];
 const Hero = () => {
+  const placeholders = [
+    "How do I start planning my project?",
+    "Generate a job description for a junior React developer.",
+    "Find top engineering colleges in my city.",
+    "How many interns should I hire for a 3-month project?",
+    "What are the first steps to building a team?",
+  ];
+
+  const handleChange = (e) => {
+    console.log(e.target.value);
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    console.log("submitted: ", e.target.value);
+  };
+
   return (
     <section className="py-20 md:py-32 bg-slate-900">
       <div className="container mx-auto px-6 text-center">
         <BackgroundLines className="flex relative -mt-45 items-center justify-center w-full flex-col px-4">
-        <h1 className="bg-clip-text text-transparent text-center bg-gradient-to-b from-neutral-900 to-neutral-700 dark:from-neutral-600 dark:to-white text-2xl md:text-4xl lg:text-7xl font-sans py-2 md:py-10 relative z-20 font-bold tracking-tight">
-          Supercharge Your Hiring 
+        <h1 className="bg-clip-text text-transparent text-center bg-gradient-to-b from-neutral-900 to-neutral-700 dark:from-neutral-600 dark:to-white text-2xl md:text-4xl lg:text-6xl font-sans py-2 md:py-10 relative z-20 font-bold tracking-tight">
+          Turn Your Idea Into a Team 
         </h1>
         <Highlight className="text-black dark:text-white text-2xl px-4 md:text-4xl lg:text-5xl font-bold text-neutral-700 dark:text-white max-w-4xl leading-relaxed lg:leading-snug text-center mx-auto">
           With AI
         </Highlight>
+
+
+        {/* Render the updated chatbox component directly */}
+          <div className="w-full max-w-xl mx-auto mt-8">
+            <PlaceholdersAndVanishInput
+                placeholders={placeholders}
+                onChange={handleChange}
+                onSubmit={onSubmit}
+              />
+            
+          </div>
+
         <div className="max-w-3xl mx-auto mb-8 mt-10">
   <TextGenerateEffect textBlocks={heroParagraph} />
 </div>

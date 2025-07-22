@@ -3,21 +3,21 @@ import { TextGenerateEffect } from "./ui/text-generate-effect";
 
 const testimonials = [
   {
-    quote: "HireAI cut our time-to-hire by 40%. The automated screening and candidate engagement are game-changers.",
-    name: "Sarah Johnson",
-    title: "Head of Talent, TechCorp",
+    quote: "As a solo founder, I had no idea where to start with hiring. TeamBlueprint guided me through the entire process, from planning to my first hire. It was a lifesaver.",
+    name: "Samantha Lee",
+    title: "Founder, InnovateApp",
     avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d", // Placeholder avatar
   },
   {
-    quote: "The dashboard and analytics provide insights we never had before. We're making smarter hiring decisions, backed by data.",
-    name: "Michael Chen",
-    title: "Recruiting Manager, Innovate Inc.",
+    quote: "We're a small team, and we couldn't afford a dedicated HR person. TeamBlueprint gave us the tools and confidence to build our team and grow our startup.",
+    name: "Alex Martinez",
+    title: "Co-Founder, CodeCrafters",
     avatar: "https://i.pravatar.cc/150?u=a042581f4e29026702d", // Placeholder avatar
   },
 ];
 const recruiterHeading = [
   {
-    text: "Loved by Leading Recruiters",
+    text: "Trusted by Founders Like You",
     className: "text-3xl md:text-4xl font-bold text-white",
   },
 ];

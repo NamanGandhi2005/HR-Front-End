@@ -1,25 +1,25 @@
 "use client";
 import { TextGenerateEffect } from "./ui/text-generate-effect";
 import React from 'react';
-import { FaComments, FaTasks, FaFileAlt, FaChartBar, FaCogs, FaShieldAlt } from 'react-icons/fa';
+import { FaComments, FaTasks, FaFileAlt, FaChartBar, FaCogs, FaShieldAlt , FaUniversity, FaUserCheck } from 'react-icons/fa';
 import { HoverEffect } from "./ui/card-hover-effect"; // 1. Import the HoverEffect component
 
 // Original features data with icons
 const features = [
   {
     icon: <FaComments className="text-blue-500 text-3xl mb-4" />,
-    title: 'Conversational AI',
-    description: 'Engage candidates with intelligent chatbots that handle screening, scheduling, and FAQs 24/7.',
+    title: 'Automated AI-led Interviews',
+    description: 'Screen candidates at scale with AI-driven interviews that assess skills and cultural fit.',
   },
   {
     icon: <FaTasks className="text-blue-500 text-3xl mb-4" />,
-    title: 'Dynamic Project Planners',
-    description: 'Visualize your hiring pipeline with interactive Gantt charts and task-based project management tools.',
+    title: 'From Idea to Project Plan',
+    description: 'Our AI guides you in structuring your project and identifying the key roles you need to hire for.',
   },
   {
     icon: <FaFileAlt className="text-blue-500 text-3xl mb-4" />,
     title: 'AI-Powered JD Generator',
-    description: 'Create compelling, optimized, and unbiased job descriptions in seconds, tailored to your ideal candidate.',
+    description: 'No more guesswork. Generate clear and effective job descriptions for interns and freshers in seconds.',
   },
   {
     icon: <FaShieldAlt className="text-blue-500 text-3xl mb-4" />,
@@ -28,13 +28,13 @@ const features = [
   },
   {
     icon: <FaChartBar className="text-blue-500 text-3xl mb-4" />,
-    title: 'Interactive Dashboards',
-    description: 'Access real-time analytics on candidate flow, time-to-hire, and other key metrics to make data-driven decisions.',
+    title: 'Your All-in-One Dashboard',
+    description: 'Manage your project plan, hiring pipeline, and candidate communication all in one place.',
   },
   {
-    icon: <FaCogs className="text-blue-500 text-3xl mb-4" />,
-    title: 'Plug-and-Play Microtools',
-    description: 'Customize your workflow with a library of microtools that integrate seamlessly with your existing systems.',
+        icon: <FaUniversity className="text-blue-500 text-3xl mb-4" />,
+        title: 'Direct Access to College Talent',
+        description: 'We connect you with a network of college and university placement cells to find eager, fresh talent.',
   },
 ];
 
@@ -55,11 +55,11 @@ const itemsForHoverEffect = features.map(feature => ({
 // Data for the TextGenerateEffect heading
 const textForFeatures = [
   {
-    text: "The All-in-One Recruitment Platform",
+    text: "The Founder's Co-Pilot for Team Building",
     className: "text-2xl font-bold",
   },
   {
-    text: "From first contact to final offer, we provide the tools you need to hire efficiently and effectively.",
+    text: "We guide you through every step, from planning your project to hiring your first team members.",
     className: "text-base font-normal mt-4",
   },
 ];
