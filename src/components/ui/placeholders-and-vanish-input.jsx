@@ -19,10 +19,10 @@ export function PlaceholdersAndVanishInput({
   };
   const handleVisibilityChange = () => {
     if (document.visibilityState !== "visible" && intervalRef.current) {
-      clearInterval(intervalRef.current); // Clear the interval when the tab is not visible
+      clearInterval(intervalRef.current);
       intervalRef.current = null;
     } else if (document.visibilityState === "visible") {
-      startAnimation(); // Restart the interval when the tab becomes visible
+      startAnimation();
     }
   };
 
@@ -100,7 +100,7 @@ export function PlaceholdersAndVanishInput({
     draw();
   }, [value, draw]);
 
-  const animate = (start) => {
+  const animate = (start, onComplete) => {
     const animateFrame = (pos = 0) => {
       requestAnimationFrame(() => {
         const newArr = [];
@@ -139,34 +139,29 @@ export function PlaceholdersAndVanishInput({
         } else {
           setValue("");
           setAnimating(false);
+          onComplete && onComplete();
         }
       });
     };
     animateFrame(start);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !animating) {
-      vanishAndSubmit();
-    }
-  };
-
-  const vanishAndSubmit = () => {
-    setAnimating(true);
-    draw();
-
+  const vanishAndSubmit = (e) => {
     const value = inputRef.current?.value || "";
+    // Only proceed if there is a value to submit.
     if (value && inputRef.current) {
-      const maxX = newDataRef.current.reduce((prev, current) => (current.x > prev ? current.x : prev), 0);
-      animate(maxX);
+        setAnimating(true); // Set animating to true ONLY when we are sure we will animate.
+        draw();
+        const maxX = newDataRef.current.reduce((prev, current) => (current.x > prev ? current.x : prev), 0);
+        animate(maxX, () => onSubmit && onSubmit(e));
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    vanishAndSubmit();
-    onSubmit && onSubmit(e);
+    vanishAndSubmit(e);
   };
+
   return (
     <form
       className={cn(
@@ -187,7 +182,13 @@ export function PlaceholdersAndVanishInput({
             onChange && onChange(e);
           }
         }}
-        onKeyDown={handleKeyDown}
+        // onKeyDown={(e) => {
+        //     if (e.key === "Enter" && !animating) {
+        //         // We still want to prevent the default form submission behavior of the keydown event
+        //         e.preventDefault();
+        //         vanishAndSubmit(e);
+        //     }
+        // }}
         ref={inputRef}
         value={value}
         type="text"
