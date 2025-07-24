@@ -11,7 +11,7 @@ import { PlaceholdersAndVanishInput } from "./ui/placeholders-and-vanish-input";
 
 const heroParagraph = [
   {
-    text: "Automate tasks, engage top candidates 24/7, and build winning teams faster. Our intelligent platform streamlines everything from JDs to interviews.",
+    text: "Automate tasks, engage freshers , and build winning teams faster. Our intelligent platform streamlines everything from Project Plans to interviews.",
     className: "text-lg md:text-xl text-slate-300 font-normal",
   },
 ];
