@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StyledBotMessage from './StyledBotMessage';
 import { Cpu, User } from 'lucide-react';
@@ -30,62 +30,34 @@ const ExamplePrompt = ({ text, promptText, onClick }) => (
     </motion.button>
 );
 
-
-const ChatPanel = ({ messages, setMessages, initialPrompt }) => {
-  const [input, setInput] = useState("");
-  const [isBotTyping, setIsBotTyping] = useState(false);
+const ChatPanel = ({ messages, input, setInput, isBotTyping, sendMessage }) => {
   const chatEndRef = useRef(null);
   const userName = "Alex";
-  const hasStartedChat = messages.length > 0 || !!initialPrompt;
+  const hasStartedChat = messages.length > 0;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isBotTyping]);
 
-  const sendMessage = async (promptOverride) => {
-    const textToSend = promptOverride || input;
-    if (!textToSend.trim()) return;
-    setMessages(prev => [...prev, { text: textToSend, sender: 'user' }]);
-    setInput("");
-    setIsBotTyping(true);
-
-    try {
-        const response = await fetch('http://localhost:3001/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: textToSend }),
-        });
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        setMessages(prev => [...prev, { text: data.reply, sender: 'bot' }]);
-    } catch (error) {
-        console.error("Fetch API call failed:", error);
-        setMessages(prev => [...prev, { text: "Sorry, I'm having trouble connecting.", sender: 'bot' }]);
-    } finally {
-        setIsBotTyping(false);
-    }
-  };
-
-  useEffect(() => {
-    if (initialPrompt && messages.length === 0) {
-        sendMessage(initialPrompt);
-    }
-  }, [initialPrompt]);
-
-
-   const placeholders = [
+  const placeholders = [
     "Find candidates for a senior Python developer...",
     "Help me draft an interview script for a UI/UX designer...",
     "What are the best platforms to hire interns from?",
     "Compare two candidate profiles for me.",
   ];
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    sendMessage();
+  }
+
   const inputArea = (
     <div className="w-full max-w-xl mx-auto">
         <PlaceholdersAndVanishInput
             placeholders={placeholders}
             onChange={(e) => setInput(e.target.value)}
-            onSubmit={() => sendMessage()}
+            onSubmit={handleSubmit}
+            value={input}
         />
     </div>
   );
@@ -129,7 +101,7 @@ const ChatPanel = ({ messages, setMessages, initialPrompt }) => {
                     </motion.div>
                 ))}
             </AnimatePresence>
-            
+
             {isBotTyping && (
                 <motion.div className="flex items-end gap-3 flex-row w-fit">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-slate-800">

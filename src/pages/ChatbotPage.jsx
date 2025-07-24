@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ChatPanel from '../components/ChatPanel';
 import LeftSidebar from '../components/LeftSidebar';
 import RightSidebar from '../components/RightSidebar';
 
 function ChatbotPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isBotTyping, setIsBotTyping] = useState(false);
-  const [promptProcessed, setPromptProcessed] = useState(false); // 1. New state to track if the prompt was handled
+  const [promptProcessed, setPromptProcessed] = useState(false);
 
   const sendMessage = async (promptOverride) => {
     const textToSend = promptOverride || input;
@@ -38,16 +39,16 @@ function ChatbotPage() {
 
   useEffect(() => {
     const initialPrompt = location.state?.initialPrompt;
-    // 2. Check if a prompt exists AND if it has NOT been processed yet
     if (initialPrompt && !promptProcessed) {
       sendMessage(initialPrompt);
-      // Mark the prompt as processed so this logic doesn't run again
       setPromptProcessed(true);
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, promptProcessed]);
+  }, [location.state, promptProcessed, navigate]);
 
   const handleNewChat = () => {
     setMessages([]);
+    setPromptProcessed(true);
   };
 
   return (

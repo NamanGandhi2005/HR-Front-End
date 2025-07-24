@@ -1,5 +1,6 @@
-"use client";
+// src/components/Hero.jsx
 
+"use client";
 import { Button } from "./ui/moving-border";
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,9 +15,10 @@ const heroParagraph = [
     className: "text-lg md:text-xl text-slate-300 font-normal",
   },
 ];
+
 const Hero = () => {
   const navigate = useNavigate();
-  const [prompt, setPrompt] = useState(""); // State to hold the input value
+  const [prompt, setPrompt] = useState("");
 
   const placeholders = [
     "How do I start planning my project?",
@@ -27,13 +29,12 @@ const Hero = () => {
   ];
 
   const handleChange = (e) => {
-    setPrompt(e.target.value); // Update state on input change
+    setPrompt(e.target.value);
   };
 
   const onSubmit = (e) => {
     e.preventDefault();
     if (prompt.trim()) {
-      // Navigate to the chatbot page with the prompt in the state
       navigate('/chatbot', { state: { initialPrompt: prompt } });
     }
   };
@@ -51,10 +52,11 @@ const Hero = () => {
 
           <div className="w-full max-w-xl mx-auto mt-8">
             <PlaceholdersAndVanishInput
-              placeholders={placeholders}
-              onChange={handleChange}
-              onSubmit={onSubmit}
-            />
+                placeholders={placeholders}
+                onChange={handleChange}
+                onSubmit={onSubmit}
+                value={prompt}
+              />
           </div>
 
           <div className="max-w-3xl mx-auto mb-8 mt-10">
