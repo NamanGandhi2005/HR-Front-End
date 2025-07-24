@@ -11,8 +11,8 @@ import {
   MobileNavMenu,
 } from "./ui/resizable-navbar";
 import { useState } from "react";
-import {Link} from 'react-router-dom';
-import ColourfulText from "./ui/colourful-text";
+import { Link } from 'react-router-dom';
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 
 export function NavbarDemo() {
   const navItems = [
@@ -40,16 +40,23 @@ export function NavbarDemo() {
         {/* Desktop Navigation */}
         <NavBody>
           <Link to="/">
-          
-          <NavbarLogo />
+            <NavbarLogo />
           </Link>
           <NavItems items={navItems} />
           <div className="flex items-center gap-4">
-            <Link to="/login">
-            <NavbarButton variant="secondary">Login</NavbarButton>
-            </Link>
+            {/* Clerk Authentication Components */}
+            <SignedOut>
+                <SignInButton mode="modal">
+                    <NavbarButton variant="secondary">Login</NavbarButton>
+                </SignInButton>
+            </SignedOut>
+            <SignedIn>
+                <UserButton afterSignOutUrl="/"/>
+            </SignedIn>
+
+            {/* "Try For Free" button remains unchanged */}
             <Link to="/chatbot">
-            <NavbarButton variant="primary">Try For Free</NavbarButton>
+              <NavbarButton variant="primary">Try For Free</NavbarButton>
             </Link>
           </div>
         </NavBody>
@@ -74,19 +81,25 @@ export function NavbarDemo() {
               </a>
             ))}
             <div className="flex w-full flex-col gap-4">
-              <NavbarButton
-                onClick={() => setIsMobileMenuOpen(false)}
-                variant="secondary"
-                className="w-full">
-                Login
-              </NavbarButton>
-              <NavbarButton
-                onClick={() => setIsMobileMenuOpen(false)}
-                variant="primary"
-                className="w-full">
-                {/* Updated text to match the desktop button */}
-                Try For Free
-              </NavbarButton>
+               {/* Clerk Authentication for Mobile */}
+               <SignedOut>
+                <SignInButton mode="modal">
+                    <NavbarButton variant="secondary" className="w-full">Login</NavbarButton>
+                </SignInButton>
+               </SignedOut>
+               <SignedIn>
+                <UserButton afterSignOutUrl="/"/>
+               </SignedIn>
+
+              {/* Mobile "Try For Free" button */}
+              <Link to="/chatbot" className="w-full">
+                <NavbarButton
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    variant="primary"
+                    className="w-full">
+                    Try For Free
+                </NavbarButton>
+              </Link>
             </div>
           </MobileNavMenu>
         </MobileNav>

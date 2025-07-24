@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import StyledBotMessage from './StyledBotMessage';
 import { Cpu, User } from 'lucide-react';
 import { PlaceholdersAndVanishInput } from "./ui/placeholders-and-vanish-input";
+// 1. Import the useUser hook from Clerk
+import { useUser } from '@clerk/clerk-react';
 
 const getGreeting = () => {
     const hour = new Date().getHours();
@@ -32,7 +34,10 @@ const ExamplePrompt = ({ text, promptText, onClick }) => (
 
 const ChatPanel = ({ messages, input, setInput, isBotTyping, sendMessage }) => {
   const chatEndRef = useRef(null);
-  const userName = "Alex";
+  // 2. Get the user object from the hook
+  const { user } = useUser();
+  // 3. Use the user's first name for the greeting, with a fallback
+  const userName = user?.firstName || "User";
   const hasStartedChat = messages.length > 0;
 
   useEffect(() => {
@@ -83,7 +88,7 @@ const ChatPanel = ({ messages, input, setInput, isBotTyping, sendMessage }) => {
         </div>
       ) : (
         <>
-          <div className="flex-grow p-6 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-slate-800/50 hover:scrollbar-thumb-blue-500">
+          <div className="flex-grow p-6 space-y-6 overflow-y-auto">
             <AnimatePresence>
                 {messages.map((msg, index) => (
                     <motion.div

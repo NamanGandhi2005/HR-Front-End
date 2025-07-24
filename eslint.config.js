@@ -7,7 +7,18 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist']),
   {
+    // This new section tells ESLint to use Node.js globals
+    // for your configuration files.
+    files: ['vite.config.js', 'eslint.config.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ['**/*.{js,jsx}'],
+    // The rest of your configuration remains the same
     extends: [
       js.configs.recommended,
       reactHooks.configs['recommended-latest'],

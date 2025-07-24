@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MessageSquare, User, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Plus, MessageSquare, ChevronsLeft, ChevronsRight } from 'lucide-react';
+// Import the necessary components from Clerk
+import { UserButton, useUser } from '@clerk/clerk-react';
 
 const LeftSidebar = ({ onNewChat }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [width, setWidth] = useState(280);
+  // Get the user object from Clerk's hook
+  const { user } = useUser();
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -65,11 +69,13 @@ const LeftSidebar = ({ onNewChat }) => {
       {/* User Info Section */}
       <div className="p-4 border-t border-slate-700">
         <div className="flex items-center">
-          <User size={30} className="rounded-full bg-gray-600 p-1 shrink-0" />
-          {!isCollapsed && (
+          {/* Clerk's UserButton will display the avatar and manage profile/logout */}
+          <UserButton afterSignOutUrl="/" />
+          {/* Show user's full name and email when expanded and user is available */}
+          {!isCollapsed && user && (
             <div className="ml-3 overflow-hidden">
-              <p className="font-semibold truncate">Alex Johnson</p>
-              <p className="text-sm text-gray-400 truncate">user-id-12345</p>
+              <p className="font-semibold truncate">{user.fullName}</p>
+              <p className="text-sm text-gray-400 truncate">{user.primaryEmailAddress?.emailAddress}</p>
             </div>
           )}
         </div>
