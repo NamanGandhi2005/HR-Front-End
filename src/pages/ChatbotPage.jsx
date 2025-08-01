@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useClerk, useUser } from '@clerk/clerk-react';
 import ChatPanel from '../components/ChatPanel';
@@ -8,151 +8,186 @@ import RightSidebar from '../components/RightSidebar';
 const MESSAGE_LIMIT_BEFORE_LOGIN = 3;
 
 function ChatbotPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
+    const location = useLocation();
+    const navigate = useNavigate();
 
-  // 1. Initialize state from a single sessionStorage object
-  const [chatState, setChatState] = useState(() => {
-    const savedState = sessionStorage.getItem('chatState');
-    return savedState ? JSON.parse(savedState) : { messages: [], chatId: null };
-  });
+    // State for messages, chatId, userId, and loading status
+    const [messages, setMessages] = useState([]);
+    const [chatId, setChatId] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [history, setHistory] = useState([]); // State for chat history
 
-  const { messages, chatId } = chatState;
+    // State for the input field, which will be passed to ChatPanel
+    const [input, setInput] = useState("");
+    const [isBotTyping, setIsBotTyping] = useState(false);
+    const [promptProcessed, setPromptProcessed] = useState(false);
+    const { openSignIn } = useClerk();
+    const { isSignedIn } = useUser();
+    const userMessageCount = useRef(0);
 
-  const [input, setInput] = useState("");
-  const [isBotTyping, setIsBotTyping] = useState(false);
-  const [promptProcessed, setPromptProcessed] = useState(false);
-  const { openSignIn } = useClerk();
-  const { isSignedIn } = useUser();
-  const userMessageCount = useRef(0);
-
-  // 2. Save the entire chat state to sessionStorage whenever it changes
-  useEffect(() => {
-    sessionStorage.setItem('chatState', JSON.stringify(chatState));
-  }, [chatState]);
-
-  // Helper function to update state
-  const updateChatState = (newMessages, newChatId) => {
-    setChatState({
-      messages: newMessages !== undefined ? newMessages : messages,
-      chatId: newChatId !== undefined ? newChatId : chatId,
-    });
-  };
-
-  const sendMessage = async (promptOverride) => {
-    const textToSend = promptOverride || input;
-    if (!textToSend.trim()) return;
-
-    if (!promptOverride) {
-        userMessageCount.current += 1;
-    }
-
-    const isRequestingCandidates = textToSend.toLowerCase().includes('show') && textToSend.toLowerCase().includes('candidates');
-
-    if (isRequestingCandidates && !isSignedIn) {
-        openSignIn();
-        return;
-    }
-
-    if (userMessageCount.current >= MESSAGE_LIMIT_BEFORE_LOGIN && !isSignedIn) {
-        const newMessages = [...messages, { text: "Please sign in to continue the conversation.", sender: 'bot' }];
-        updateChatState(newMessages, chatId);
-        openSignIn();
-        return;
-    }
-    
-    // Add user message to state immediately for a responsive UI
-    const userMessage = { text: textToSend, sender: 'user' };
-    const newMessages = [...messages, userMessage];
-    updateChatState(newMessages, chatId);
-
-    setInput("");
-    setIsBotTyping(true);
-
-    try {
-        // 3. Prepare history in the format the backend expects
-        const historyForBackend = newMessages.slice(0, -1).map(msg => ({ // Send all messages except the current one
-            role: msg.sender === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
+    // Helper function to format messages from the DB to what the UI expects
+    const formatMessages = (dbMessages) => {
+        return dbMessages.map(msg => ({
+            text: msg.content,
+            sender: msg.sender
         }));
+    };
 
-        // 4. Send `prompt`, `chatId`, and `history` in the request body
-        const response = await fetch('http://localhost:3001', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              prompt: textToSend,
-              chatId: chatId, // Send the current chatId (can be null for a new chat)
-              // history: historyForBackend
-            }),
-            // credentials: 'include', // Important for sending cookies
-        });
+    // Fetches the list of past chats
+    const fetchHistory = useCallback(async () => {
+        if (!userId) return;
+        try {
+            const response = await fetch('http://localhost:3001/history', {
+                credentials: 'include'
+            });
+            if (!response.ok) throw new Error("Failed to fetch history");
+            const data = await response.json();
+            setHistory(data);
+        } catch (error) {
+            console.error("Error fetching history:", error);
+            setHistory([]);
+        }
+    }, [userId]); // Dependency on userId ensures it refetches if the user logs in
 
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        
-        const data = await response.json();
+    // Fetch history when userId is available
+    useEffect(() => {
+        fetchHistory();
+    }, [userId, fetchHistory]);
+    
+    // Load the initial session
+    useEffect(() => {
+        const loadSession = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('http://localhost:3001/session', {
+                    method: 'GET',
+                    credentials: 'include',
+                });
+                if (!response.ok) throw new Error("Failed to fetch session");
+                const data = await response.json();
+                if (data && data.userId) {
+                    setUserId(data.userId);
+                    if (data.messages && data.messages.length > 0) {
+                        setChatId(data.chatId);
+                        setMessages(formatMessages(data.messages));
+                    }
+                }
+            } catch (error) {
+                console.error("Could not restore session:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadSession();
+    }, []);
 
-        // 5. Add the bot's reply and update the chatId if it's a new chat
-        const botMessage = { text: data.reply, sender: 'bot' };
-        const finalMessages = [...newMessages, botMessage];
-        const newChatId = data.newChatId || chatId; // Use the new ID if provided
-        
-        updateChatState(finalMessages, newChatId);
+    // Function to load a specific chat from the history
+    const loadSpecificChat = async (chatIdToLoad) => {
+        if (chatIdToLoad === chatId) return;
+        setIsLoading(true);
+        try {
+            const response = await fetch(`http://localhost:3001/chat/${chatIdToLoad}`, {
+                method: 'GET',
+                credentials: 'include',
+            });
+            if (!response.ok) throw new Error("Failed to fetch specific chat");
+            const dbMessages = await response.json();
+            setChatId(chatIdToLoad);
+            setMessages(formatMessages(dbMessages));
+        } catch (error) {
+            console.error("Could not load specific chat:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    } catch (error) {
-        console.error("Fetch API call failed:", error);
-        const errorMessages = [...newMessages, { text: "Sorry, I'm having trouble connecting.", sender: 'bot' }];
-        updateChatState(errorMessages, chatId);
-    } finally {
-        setIsBotTyping(false);
-    }
-  };
+    const sendMessage = async (promptOverride) => {
+        const textToSend = promptOverride || input;
+        if (!textToSend.trim() || isBotTyping) return;
 
-  useEffect(() => {
-    const initialPrompt = location.state?.initialPrompt;
-    if (initialPrompt && !promptProcessed) {
-      sendMessage(initialPrompt);
-      setPromptProcessed(true);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.state, promptProcessed, navigate]);
+        if (!promptOverride) {
+            userMessageCount.current += 1;
+        }
 
-  const handleNewChat = () => {
-  // Define the initial state for a new chat
-  sessionStorage.removeItem('chatState');
-  const initialState = {
-    messages: [
-      {
-        sender: 'bot',
-        text: "Hello! I’m the Planner and I see that you are having a business idea. Just share it and I’ll help you recruit the best team for your project.\n\nBefore we head start please share the details mentioned below:\nOrganization Name:\nOrganization Address:"
-      }
-    ],
-    chatId: null
-  };
+        const isRequestingCandidates = textToSend.toLowerCase().includes('show') && textToSend.toLowerCase().includes('candidates');
+        if (isRequestingCandidates && !isSignedIn) {
+            openSignIn();
+            return;
+        }
+        if (userMessageCount.current >= MESSAGE_LIMIT_BEFORE_LOGIN && !isSignedIn) {
+            setMessages(prev => [...prev, { text: "Please sign in to continue the conversation.", sender: 'bot' }]);
+            openSignIn();
+            return;
+        }
 
-  // Set the chat state to the initial state
-  setChatState(initialState);
-  
-  // Clear the state from session storage so it doesn't load the old chat on refresh
-  
-  // Reset other state variables
-  setPromptProcessed(true); // Prevents initial prompts from re-running
-  userMessageCount.current = 0;
-};
+        const newMessages = [...messages, { text: textToSend, sender: 'user' }];
+        setMessages(newMessages);
+        setInput("");
+        setIsBotTyping(true);
 
-  return (
-    <div className="flex w-full overflow-hidden">
-      <LeftSidebar onNewChat={handleNewChat} />
-      <ChatPanel
-        messages={messages}
-        input={input}
-        setInput={setInput}
-        isBotTyping={isBotTyping}
-        sendMessage={sendMessage}
-      />
-      <RightSidebar />
-    </div>
-  );
+        try {
+            const response = await fetch('http://localhost:3001/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: textToSend,
+                    chatId: chatId,
+                    history: newMessages.slice(0, -1)
+                }),
+                credentials: 'include',
+            });
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            const data = await response.json();
+            setMessages(prev => [...prev, { text: data.reply, sender: 'bot' }]);
+            if (data.newChatId) {
+                setChatId(data.newChatId);
+                fetchHistory(); // Refetch history when a new chat is created
+            }
+        } catch (error) {
+            console.error("Fetch API call failed:", error);
+            setMessages(prev => [...prev, { text: "Sorry, I'm having trouble connecting.", sender: 'bot' }]);
+        } finally {
+            setIsBotTyping(false);
+        }
+    };
+
+    useEffect(() => {
+        const initialPrompt = location.state?.initialPrompt;
+        if (initialPrompt && !promptProcessed) {
+            sendMessage(initialPrompt);
+            setPromptProcessed(true);
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, promptProcessed, navigate, sendMessage]);
+
+    const handleNewChat = () => {
+        setMessages([]);
+        setChatId(null);
+        setPromptProcessed(false);
+        userMessageCount.current = 0;
+    };
+
+    return (
+        <div className="flex w-full overflow-hidden">
+            <LeftSidebar
+                onNewChat={handleNewChat}
+                userId={userId}
+                onChatSelect={loadSpecificChat}
+                currentChatId={chatId}
+                history={history} // Pass history as a prop
+            />
+            <ChatPanel
+                messages={messages}
+                input={input}
+                setInput={setInput}
+                isBotTyping={isBotTyping}
+                sendMessage={sendMessage}
+                isLoading={isLoading}
+            />
+            <RightSidebar />
+        </div>
+    );
 }
 
 export default ChatbotPage;

@@ -70,7 +70,7 @@ app.post('/chat', async (req, res) => {
         const userMessage = new Message({ chatId, sender: 'user', content: prompt, ipAddress: userIpAddress });
         await userMessage.save();
         
-        const n8nWebhookUrl = 'https://techswarm.app.n8n.cloud/webhook/HRBOT';
+        const n8nWebhookUrl = 'https://shivanshu-nsut.app.n8n.cloud/webhook/HRBOT';
         
         console.log(`Sending data to n8n webhook for Chat ID: ${chatId}`);
 
@@ -147,7 +147,7 @@ app.get('/chat/:chatId', async (req, res) => {
         const messages = await Message.find({ chatId }).sort({ createdAt: 1 });
         res.status(200).json(messages);
     } catch (error) {
-        console.error(`Error fetching messages for chat ${req.params.chatId}:, error`);
+        console.error(`Error fetching messages for chat ${req.params.chatId}:`, error);
         res.status(500).json({ error: 'Failed to fetch messages.' });
     }
 });
