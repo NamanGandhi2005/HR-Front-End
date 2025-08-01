@@ -77,15 +77,15 @@ function ChatbotPage() {
         }));
 
         // 4. Send `prompt`, `chatId`, and `history` in the request body
-        const response = await fetch('http://localhost:3001/chat', {
+        const response = await fetch('http://localhost:3001', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               prompt: textToSend,
               chatId: chatId, // Send the current chatId (can be null for a new chat)
-              history: historyForBackend
+              // history: historyForBackend
             }),
-            credentials: 'include', // Important for sending cookies
+            // credentials: 'include', // Important for sending cookies
         });
 
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -118,12 +118,27 @@ function ChatbotPage() {
   }, [location.state, promptProcessed, navigate]);
 
   const handleNewChat = () => {
-    // 6. Clear both messages and chatId for a new chat
-    updateChatState([], null);
-    setPromptProcessed(true);
-    userMessageCount.current = 0;
-    sessionStorage.removeItem('chatState');
+  // Define the initial state for a new chat
+  sessionStorage.removeItem('chatState');
+  const initialState = {
+    messages: [
+      {
+        sender: 'bot',
+        text: "Hello! I’m the Planner and I see that you are having a business idea. Just share it and I’ll help you recruit the best team for your project.\n\nBefore we head start please share the details mentioned below:\nOrganization Name:\nOrganization Address:"
+      }
+    ],
+    chatId: null
   };
+
+  // Set the chat state to the initial state
+  setChatState(initialState);
+  
+  // Clear the state from session storage so it doesn't load the old chat on refresh
+  
+  // Reset other state variables
+  setPromptProcessed(true); // Prevents initial prompts from re-running
+  userMessageCount.current = 0;
+};
 
   return (
     <div className="flex w-full overflow-hidden">
