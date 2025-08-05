@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useClerk, useUser } from '@clerk/clerk-react';
+import { useClerk, useUser, useAuth } from '@clerk/clerk-react';
 import ChatPanel from '../components/ChatPanel';
 import LeftSidebar from '../components/LeftSidebar';
 import RightSidebar from '../components/RightSidebar';
@@ -10,6 +10,9 @@ const MESSAGE_LIMIT_BEFORE_LOGIN = 3;
 function ChatbotPage() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { openSignIn } = useClerk();
+    const { isSignedIn } = useUser();
+    const { getToken } = useAuth();
 
     const [messages, setMessages] = useState([]);
     const [chatId, setChatId] = useState(null);
@@ -19,23 +22,102 @@ function ChatbotPage() {
     const [input, setInput] = useState("");
     const [isBotTyping, setIsBotTyping] = useState(false);
     const [promptProcessed, setPromptProcessed] = useState(false);
-    const { openSignIn } = useClerk();
-    const { isSignedIn } = useUser();
     const userMessageCount = useRef(0);
+    
+    // A ref to prevent the merge effect from running multiple times
+    const hasMerged = useRef(false);
+
+    const authenticatedFetch = useCallback(async (url, options = {}) => {
+        const token = await getToken();
+        const headers = {
+            ...options.headers,
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+        return fetch(url, { ...options, headers, credentials: 'include' });
+    }, [getToken]);
 
     const formatMessages = (dbMessages) => {
-        return dbMessages.map(msg => ({
-            text: msg.content,
-            sender: msg.sender
-        }));
+        return dbMessages.map(msg => ({ text: msg.content, sender: msg.sender }));
     };
+
+    const handleNewChat = () => {
+        setMessages([]);
+        setChatId(null);
+        setPromptProcessed(false);
+        userMessageCount.current = 0;
+    };
+    
+    // Effect to handle merging guest chats to a signed-in user
+    useEffect(() => {
+        const mergeGuestChats = async () => {
+            const guestId = sessionStorage.getItem('guestId');
+            // Only run if the user is signed in, we have a guestId, and we haven't merged yet
+            if (isSignedIn && guestId && !hasMerged.current) {
+                hasMerged.current = true; // Prevent this from running again
+                try {
+                    await authenticatedFetch('http://localhost:3001/merge', {
+                        method: 'POST',
+                        body: JSON.stringify({ guestId }),
+                    });
+                    sessionStorage.removeItem('guestId'); // Clean up the stored guestId
+                    
+                    // Reload the session and history for the now authenticated user
+                    await loadSessionAndHistory();
+                } catch (error) {
+                    console.error("Failed to merge chats:", error);
+                }
+            }
+        };
+
+        mergeGuestChats();
+    }, [isSignedIn, authenticatedFetch]);
+
+    // Combined function to load session and history
+    const loadSessionAndHistory = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            if (location.state?.startNewChat) {
+                handleNewChat();
+                return;
+            }
+
+            const response = await authenticatedFetch('http://localhost:3001/session', { method: 'GET' });
+            if (!response.ok) throw new Error("Failed to fetch session");
+            
+            const data = await response.json();
+            if (data && data.userId) {
+                setUserId(data.userId);
+                
+                // If the user is a guest, store their ID to prepare for a potential merge
+                if (!isSignedIn && data.userId.startsWith('guest-')) {
+                    sessionStorage.setItem('guestId', data.userId);
+                }
+                
+                if (data.messages && data.messages.length > 0) {
+                    setChatId(data.chatId);
+                    setMessages(formatMessages(data.messages));
+                } else {
+                    setMessages([]); // Clear messages if the user has no chats
+                    setChatId(null);
+                }
+            }
+        } catch (error) {
+            console.error("Could not restore session:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [location.state?.startNewChat, authenticatedFetch, isSignedIn]);
+
+    // Main effect to load data on component mount
+    useEffect(() => {
+        loadSessionAndHistory();
+    }, [loadSessionAndHistory]);
 
     const fetchHistory = useCallback(async () => {
         if (!userId) return;
         try {
-            const response = await fetch('http://localhost:3001/history', {
-                credentials: 'include'
-            });
+            const response = await authenticatedFetch('http://localhost:3001/history');
             if (!response.ok) throw new Error("Failed to fetch history");
             const data = await response.json();
             setHistory(data);
@@ -43,54 +125,17 @@ function ChatbotPage() {
             console.error("Error fetching history:", error);
             setHistory([]);
         }
-    }, [userId]);
-
-    useEffect(() => {
-        const loadInitialData = async () => {
-            setIsLoading(true);
-            try {
-                // If we are starting a new chat, don't load the previous session.
-                if (location.state?.startNewChat) {
-                    handleNewChat();
-                    return;
-                }
-
-                const response = await fetch('http://localhost:3001/session', {
-                    method: 'GET',
-                    credentials: 'include',
-                });
-                if (!response.ok) throw new Error("Failed to fetch session");
-                const data = await response.json();
-                if (data && data.userId) {
-                    setUserId(data.userId);
-                    if (data.messages && data.messages.length > 0) {
-                        setChatId(data.chatId);
-                        setMessages(formatMessages(data.messages));
-                    }
-                }
-            } catch (error) {
-                console.error("Could not restore session:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadInitialData();
-    }, [location.state?.startNewChat]); // Re-run if `startNewChat` changes
+    }, [userId, authenticatedFetch]);
     
     useEffect(() => {
-        if (userId) {
-            fetchHistory();
-        }
+        if (userId) fetchHistory();
     }, [userId, fetchHistory]);
     
     const loadSpecificChat = async (chatIdToLoad) => {
         if (chatIdToLoad === chatId) return;
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/chat/${chatIdToLoad}`, {
-                method: 'GET',
-                credentials: 'include',
-            });
+            const response = await authenticatedFetch(`http://localhost:3001/chat/${chatIdToLoad}`, { method: 'GET' });
             if (!response.ok) throw new Error("Failed to fetch specific chat");
             const dbMessages = await response.json();
             setChatId(chatIdToLoad);
@@ -108,11 +153,6 @@ function ChatbotPage() {
 
         if (!promptOverride) userMessageCount.current += 1;
         
-        const isRequestingCandidates = textToSend.toLowerCase().includes('show') && textToSend.toLowerCase().includes('candidates');
-        if (isRequestingCandidates && !isSignedIn) {
-            openSignIn();
-            return;
-        }
         if (userMessageCount.current >= MESSAGE_LIMIT_BEFORE_LOGIN && !isSignedIn) {
             setMessages(prev => [...prev, { text: "Please sign in to continue the conversation.", sender: 'bot' }]);
             openSignIn();
@@ -125,15 +165,13 @@ function ChatbotPage() {
         setIsBotTyping(true);
 
         try {
-            const response = await fetch('http://localhost:3001/chat', {
+            const response = await authenticatedFetch('http://localhost:3001/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: textToSend,
                     chatId: chatId,
                     history: newMessages.slice(0, -1)
                 }),
-                credentials: 'include',
             });
             if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
             const data = await response.json();
@@ -141,15 +179,8 @@ function ChatbotPage() {
             
             if (data.newChatId) {
                 setChatId(data.newChatId);
-                if (!userId) {
-                    const sessionResponse = await fetch('http://localhost:3001/session', { credentials: 'include' });
-                    const sessionData = await sessionResponse.json();
-                    if (sessionData && sessionData.userId) {
-                        setUserId(sessionData.userId);
-                    }
-                } else {
-                    fetchHistory();
-                }
+                // After creating a new chat, refetch the history to update the sidebar
+                fetchHistory(); 
             }
         } catch (error) {
             console.error("Fetch API call failed:", error);
@@ -168,18 +199,10 @@ function ChatbotPage() {
         }
     }, [location.state, promptProcessed, navigate]);
 
-    const handleNewChat = () => {
-        setMessages([]);
-        setChatId(null);
-        setPromptProcessed(false);
-        userMessageCount.current = 0;
-    };
-
     return (
         <div className="flex w-full overflow-hidden">
             <LeftSidebar
                 onNewChat={handleNewChat}
-                userId={userId}
                 onChatSelect={loadSpecificChat}
                 currentChatId={chatId}
                 history={history}
