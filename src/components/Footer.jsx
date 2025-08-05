@@ -11,7 +11,7 @@ const Footer = () => {
             <FaRocket className="text-blue-500 text-2xl" />
           
             <h1 className="text-2xl md:text-5xl lg:text-4xl font-bold text-center text-white relative z-2 font-sans">
-                    <ColourfulText text="HireAI" />
+                    <ColourfulText text="TeamFinder" />
             
             </h1>
           </div>
@@ -27,7 +27,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-slate-800 text-center text-slate-500 text-sm">
-          <p>© {new Date().getFullYear()} HireAI. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} TeamFinder. All rights reserved.</p>
           <p className="mt-2">
             <a href="#" className="hover:text-white">Privacy Policy</a> · <a href="#" className="hover:text-white">Terms of Service</a>
           </p>

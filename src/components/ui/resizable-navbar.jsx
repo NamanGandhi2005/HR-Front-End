@@ -199,7 +199,7 @@ export const NavbarLogo = () => {
 
     <FaRocket className="text-blue-500 text-2xl" />
     <h1 className="text-2xl md:text-5xl lg:text-4xl font-bold text-center text-white relative z-2 font-sans">
-        <ColourfulText text="HireAI" />
+        <ColourfulText text="TeamFinder" />
 
     </h1>
 

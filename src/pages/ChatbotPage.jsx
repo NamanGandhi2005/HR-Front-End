@@ -11,14 +11,11 @@ function ChatbotPage() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // State for messages, chatId, userId, and loading status
     const [messages, setMessages] = useState([]);
     const [chatId, setChatId] = useState(null);
     const [userId, setUserId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [history, setHistory] = useState([]); // State for chat history
-
-    // State for the input field, which will be passed to ChatPanel
+    const [history, setHistory] = useState([]);
     const [input, setInput] = useState("");
     const [isBotTyping, setIsBotTyping] = useState(false);
     const [promptProcessed, setPromptProcessed] = useState(false);
@@ -26,7 +23,6 @@ function ChatbotPage() {
     const { isSignedIn } = useUser();
     const userMessageCount = useRef(0);
 
-    // Helper function to format messages from the DB to what the UI expects
     const formatMessages = (dbMessages) => {
         return dbMessages.map(msg => ({
             text: msg.content,
@@ -34,8 +30,8 @@ function ChatbotPage() {
         }));
     };
 
-    // Fetches the list of past chats
     const fetchHistory = useCallback(async () => {
+        // The guard clause is important. It now correctly depends on the userId state.
         if (!userId) return;
         try {
             const response = await fetch('http://localhost:3001/history', {
@@ -48,14 +44,9 @@ function ChatbotPage() {
             console.error("Error fetching history:", error);
             setHistory([]);
         }
-    }, [userId]); // Dependency on userId ensures it refetches if the user logs in
+    }, [userId]); // This dependency correctly triggers a refetch when userId changes.
 
-    // Fetch history when userId is available
-    useEffect(() => {
-        fetchHistory();
-    }, [userId, fetchHistory]);
-    
-    // Load the initial session
+    // This effect runs once on mount to load the initial session.
     useEffect(() => {
         const loadSession = async () => {
             setIsLoading(true);
@@ -67,7 +58,7 @@ function ChatbotPage() {
                 if (!response.ok) throw new Error("Failed to fetch session");
                 const data = await response.json();
                 if (data && data.userId) {
-                    setUserId(data.userId);
+                    setUserId(data.userId); // This will trigger the history fetch.
                     if (data.messages && data.messages.length > 0) {
                         setChatId(data.chatId);
                         setMessages(formatMessages(data.messages));
@@ -80,9 +71,13 @@ function ChatbotPage() {
             }
         };
         loadSession();
-    }, []);
+    }, []); // Empty dependency array ensures this runs only once.
 
-    // Function to load a specific chat from the history
+    // This effect is dedicated to fetching history whenever the userId is set or changes.
+    useEffect(() => {
+        fetchHistory();
+    }, [userId, fetchHistory]);
+    
     const loadSpecificChat = async (chatIdToLoad) => {
         if (chatIdToLoad === chatId) return;
         setIsLoading(true);
@@ -106,10 +101,8 @@ function ChatbotPage() {
         const textToSend = promptOverride || input;
         if (!textToSend.trim() || isBotTyping) return;
 
-        if (!promptOverride) {
-            userMessageCount.current += 1;
-        }
-
+        if (!promptOverride) userMessageCount.current += 1;
+        
         const isRequestingCandidates = textToSend.toLowerCase().includes('show') && textToSend.toLowerCase().includes('candidates');
         if (isRequestingCandidates && !isSignedIn) {
             openSignIn();
@@ -140,9 +133,22 @@ function ChatbotPage() {
             if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
             const data = await response.json();
             setMessages(prev => [...prev, { text: data.reply, sender: 'bot' }]);
+            
+            // **THE FIX**: When a new chat is created, update state and refetch everything needed.
             if (data.newChatId) {
                 setChatId(data.newChatId);
-                fetchHistory(); // Refetch history when a new chat is created
+                // If it was the first message for a guest, the userId was just created.
+                // Refetch the session to get the new userId, which will trigger the history fetch.
+                if (!userId) {
+                    const sessionResponse = await fetch('http://localhost:3001/session', { credentials: 'include' });
+                    const sessionData = await sessionResponse.json();
+                    if (sessionData && sessionData.userId) {
+                        setUserId(sessionData.userId); // This state update triggers the history fetch
+                    }
+                } else {
+                    // If a user was already logged in, just refetch the history list
+                    fetchHistory();
+                }
             }
         } catch (error) {
             console.error("Fetch API call failed:", error);
@@ -159,7 +165,7 @@ function ChatbotPage() {
             setPromptProcessed(true);
             navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state, promptProcessed, navigate, sendMessage]);
+    }, [location.state, promptProcessed, navigate]);
 
     const handleNewChat = () => {
         setMessages([]);
@@ -175,7 +181,7 @@ function ChatbotPage() {
                 userId={userId}
                 onChatSelect={loadSpecificChat}
                 currentChatId={chatId}
-                history={history} // Pass history as a prop
+                history={history}
             />
             <ChatPanel
                 messages={messages}
