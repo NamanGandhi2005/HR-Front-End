@@ -2,7 +2,7 @@
 
 "use client";
 import { Button } from "./ui/moving-border";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackgroundLines } from "./ui/background-lines";
 import { HeroHighlight, Highlight } from "./ui/hero-highlight";
@@ -20,6 +20,10 @@ const Hero = () => {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
 
+  useEffect(() => {
+    setPrompt("");
+  }, []);
+
   const placeholders = [
     "How do I start planning my project?",
     "Generate a job description for a junior React developer.",
@@ -35,7 +39,8 @@ const Hero = () => {
   const onSubmit = (e) => {
     e.preventDefault();
     if (prompt.trim()) {
-      navigate('/chatbot', { state: { initialPrompt: prompt } });
+      // Add `startNewChat: true` to the state passed during navigation
+      navigate('/chatbot', { state: { initialPrompt: prompt, startNewChat: true } });
     }
   };
 

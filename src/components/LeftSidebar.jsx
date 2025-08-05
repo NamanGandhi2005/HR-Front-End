@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MessageSquare, User, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-// Receive history as a prop
 const LeftSidebar = ({ onNewChat, userId, onChatSelect, currentChatId, history }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [width, setWidth] = useState(280);
@@ -47,7 +46,6 @@ const LeftSidebar = ({ onNewChat, userId, onChatSelect, currentChatId, history }
                     {!isCollapsed ? 'History' : '...'}
                 </h2>
                 
-                {/* Render the history list from props */}
                 <ul className="space-y-1">
                     {history.map((chat) => (
                         <li
@@ -61,8 +59,9 @@ const LeftSidebar = ({ onNewChat, userId, onChatSelect, currentChatId, history }
                         >
                             <MessageSquare size={20} className="shrink-0" />
                             {!isCollapsed && (
+                                // **STEP 3: Display the chat title**
                                 <span className="ml-3 truncate text-sm">
-                                    Chat from {new Date(chat.createdAt).toLocaleDateString()}
+                                    {chat.title || 'New Chat'}
                                 </span>
                             )}
                         </li>

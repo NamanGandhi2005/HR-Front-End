@@ -30,11 +30,15 @@ const MessageSchema = new mongoose.Schema({
     ipAddress: { type: String },
     createdAt: { type: Date, default: Date.now }
 });
+
+// **STEP 1: Add `title` to the ChatSchema**
 const ChatSchema = new mongoose.Schema({
     chatId: { type: String, required: true, unique: true },
     userId: { type: String, required: true, index: true },
+    title: { type: String, default: 'New Chat' }, // Add this line
     createdAt: { type: Date, default: Date.now }
 });
+
 const Message = mongoose.model('Message', MessageSchema);
 const Chat = mongoose.model('Chat', ChatSchema);
 
@@ -63,20 +67,22 @@ app.post('/chat', async (req, res) => {
         const isNewChat = !chatId;
         if (isNewChat) {
             chatId = uuidv4();
-            const newChat = new Chat({ chatId, userId });
+            // **STEP 2: Save the prompt as the title for new chats**
+            const newChat = new Chat({ 
+                chatId, 
+                userId,
+                title: prompt.substring(0, 50) // Use the prompt as the title
+            });
             await newChat.save();
         }
 
         const userMessage = new Message({ chatId, sender: 'user', content: prompt, ipAddress: userIpAddress });
         await userMessage.save();
         
-        const n8nWebhookUrl = 'https://shivanshu-nsut.app.n8n.cloud/webhook/HRBOT';
+        const n8nWebhookUrl = 'https://techswarm.app.n8n.cloud/webhook/HRBOT';
         
         console.log(`Sending data to n8n webhook for Chat ID: ${chatId}`);
 
-        // --- START: THE KEY CHANGE IS HERE ---
-        // The n8n AI Agent and Memory nodes expect a specific history format.
-        // We will format our simple message history into what n8n needs.
         const formattedHistory = history.map(msg => {
             return {
                 type: msg.sender === 'user' ? 'human' : 'ai',
@@ -85,7 +91,6 @@ app.post('/chat', async (req, res) => {
                 }
             };
         });
-        // --- END: THE KEY CHANGE ---
 
         const n8nResponse = await fetch(n8nWebhookUrl, {
             method: 'POST',
@@ -94,7 +99,6 @@ app.post('/chat', async (req, res) => {
                 prompt: prompt,
                 chatId: chatId,
                 userId: userId,
-                // Send the newly formatted history
                 history: formattedHistory,
                 ipAddress: userIpAddress
             })
@@ -133,6 +137,7 @@ app.get('/history', async (req, res) => {
         if (!userId) {
             return res.status(401).json({ error: "User not authenticated." });
         }
+        // No change needed here, the `title` will be returned automatically
         const userChats = await Chat.find({ userId }).sort({ createdAt: -1 });
         res.status(200).json(userChats);
     } catch (error) {
